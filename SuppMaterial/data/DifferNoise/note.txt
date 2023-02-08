@@ -1,0 +1,2 @@
+DATA_WN: The 50 sets of simulated data with pure white noise
+DATA_WFN: The 50 sets of simulated data with white noise plus flicker noise

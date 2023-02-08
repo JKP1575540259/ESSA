@@ -1,0 +1,85 @@
+% The script conducts the 50 repeated simulation experiments to investigate the
+% statistical performance of the ESSA approach on analyzing the incomplete time series with
+% different percentage of missing data
+
+% DATA_1M - DATA_6M: the 50 sets of incomplete time series with missing
+% percentage of 10% - 60%. The missing values are marked as NaN.
+
+% FORM_1M - FORM_6M: the associated formal errors.
+
+L = 365; % window size
+k = 5;   % reconstruction order
+path = 'D:\SuppMaterial\'; % The users can change the folder
+DATA_1M = cell2mat(struct2cell(load(fullfile(path,'data','Repeated','DATA_1M.mat'))));
+DATA_2M = cell2mat(struct2cell(load(fullfile(path,'data','Repeated','DATA_2M.mat'))));
+DATA_3M = cell2mat(struct2cell(load(fullfile(path,'data','Repeated','DATA_3M.mat'))));
+DATA_4M = cell2mat(struct2cell(load(fullfile(path,'data','Repeated','DATA_4M.mat'))));
+DATA_5M = cell2mat(struct2cell(load(fullfile(path,'data','Repeated','DATA_5M.mat'))));
+DATA_6M = cell2mat(struct2cell(load(fullfile(path,'data','Repeated','DATA_6M.mat'))));
+FORM_1M = cell2mat(struct2cell(load(fullfile(path,'data','Repeated','FORM_1M.mat'))));
+FORM_2M = cell2mat(struct2cell(load(fullfile(path,'data','Repeated','FORM_2M.mat'))));
+FORM_3M = cell2mat(struct2cell(load(fullfile(path,'data','Repeated','FORM_3M.mat'))));
+FORM_4M = cell2mat(struct2cell(load(fullfile(path,'data','Repeated','FORM_4M.mat'))));
+FORM_5M = cell2mat(struct2cell(load(fullfile(path,'data','Repeated','FORM_5M.mat'))));
+FORM_6M = cell2mat(struct2cell(load(fullfile(path,'data','Repeated','FORM_6M.mat'))));
+
+signal_true = cell2mat(struct2cell(load(fullfile(path,'data','signal_true.mat')))); % simulated true signals
+t = cell2mat(struct2cell(load(fullfile(path,'data','t.mat')))); % time series in decimal year
+
+DATA_T = {DATA_1M,DATA_2M,DATA_3M,DATA_4M,DATA_5M,DATA_6M};
+FORM_T = {FORM_1M,FORM_2M,FORM_3M,FORM_4M,FORM_5M,FORM_6M};
+RMSE_F_Avai = zeros(50,6); % RMSEs of extracted signals by ESSA (Weighted) at available epochs. The column denotes different missing percentage (10% - 60%).
+RMSE_F_Miss = zeros(50,6); % RMSEs of extracted signals by ESSA (Weighted) at missing epochs. The column denotes different missing percentage (10% - 60%).
+RMSE_I_Avai = zeros(50,6); % RMSEs of extracted signals by ESSA (Identity) at available epochs. The column denotes different missing percentage (10% - 60%).
+RMSE_I_Miss = zeros(50,6); % RMSEs of extracted signals by ESSA (Identity) at missing epochs. The column denotes different missing percentage (10% - 60%).
+for i = 1:6
+    Data = DATA_T{i};
+    Form = FORM_T{i};
+    for j = 1:50
+        data = Data(:,j);
+        form = Form(:,j);
+        index_miss = find(isnan(data)==1);
+        index_avai = find(isnan(data)==0);
+        data = data(index_avai);
+        form = form(index_avai);
+        signal_f = ESSA_F(form,data,index_miss,L,k );
+        signal_i = ESSA_I(data,index_miss,L,k );
+        RMSE_F_Avai(j,i) = norm(signal_f(index_avai) - signal_true(index_avai))/sqrt(length(index_avai));
+        RMSE_I_Avai(j,i) = norm(signal_i(index_avai) - signal_true(index_avai))/sqrt(length(index_avai));
+        RMSE_F_Miss(j,i) = norm(signal_f(index_miss) - signal_true(index_miss))/sqrt(length(index_miss));
+        RMSE_I_Miss(j,i) = norm(signal_i(index_miss) - signal_true(index_miss))/sqrt(length(index_miss));
+    end
+end
+
+% Notes:
+% (1) plot the RMSEs of estimated signals by ESSA at available epochs for 50 simulations
+% (2) the six sub-figures are the RMSEs under different missing percentages (10%-60%, order: left->right,top->bottom) 
+figure
+for i = 1:6
+    subplot(3,2,i)
+    plot(RMSE_I_Avai(:,i),'g');
+    hold on
+    plot(RMSE_F_Avai(:,i),'r');
+    if i==1
+        legend('ESSA(Identity)','ESSA(Weight)');
+    end
+end
+
+% Notes:
+% (1) plot the RMSEs of estimated signals by ESSA at missing epochs for 50 simulations
+% (2) the six sub-figures are the RMSEs under different missing percentages (10%-60%, order: left->right,top->bottom) 
+figure
+for i = 1:6
+    subplot(3,2,i)
+    plot(RMSE_I_Miss(:,i),'g');
+    hold on
+    plot(RMSE_F_Miss(:,i),'r');
+    if i==1
+        legend('ESSA(Identity)','ESSA(Weight)');
+    end
+end
+
+
+
+
+

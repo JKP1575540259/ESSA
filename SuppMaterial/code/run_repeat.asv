@@ -1,0 +1,82 @@
+% The script conducts the single simulation experiment to investigate the
+% performance of the EPCA approach on analyzing the incomplete time series with
+% different percentage of missing data
+
+% DATA_1C - DATA_6C: the incomplete time series with missing percentage of
+% 10% - 60%. The missing values are marked as NaN.
+
+% FORM_1C - FORM_6C: the associated formal errors.
+
+L = 365; % window size
+k = 5;   % reconstruction order
+path = 'D:\小论文\沈老师课程\沈老师课程\code - 副本\返修数据\supp\data\';
+DATA_1M = cell2mat(struct2cell(load(fullfile(path,'Repeated','DATA_1M.mat'))));
+DATA_2M = cell2mat(struct2cell(load(fullfile(path,'Repeated','DATA_2M.mat'))));
+DATA_3M = cell2mat(struct2cell(load(fullfile(path,'Repeated','DATA_3M.mat'))));
+DATA_4M = cell2mat(struct2cell(load(fullfile(path,'Repeated','DATA_4M.mat'))));
+DATA_5M = cell2mat(struct2cell(load(fullfile(path,'Repeated','DATA_5M.mat'))));
+DATA_6M = cell2mat(struct2cell(load(fullfile(path,'Repeated','DATA_6M.mat'))));
+FORM_1M = cell2mat(struct2cell(load(fullfile(path,'Repeated','FORM_1M.mat'))));
+FORM_2M = cell2mat(struct2cell(load(fullfile(path,'Repeated','FORM_2M.mat'))));
+FORM_3M = cell2mat(struct2cell(load(fullfile(path,'Repeated','FORM_3M.mat'))));
+FORM_4M = cell2mat(struct2cell(load(fullfile(path,'Repeated','FORM_4M.mat'))));
+FORM_5M = cell2mat(struct2cell(load(fullfile(path,'Repeated','FORM_5M.mat'))));
+FORM_6M = cell2mat(struct2cell(load(fullfile(path,'Repeated','FORM_6M.mat'))));
+
+signal_true = cell2mat(struct2cell(load(fullfile(path,'signal_true.mat')))); % simulated true signals
+t = cell2mat(struct2cell(load(fullfile(path,'t.mat')))); % time series in decimal year
+
+DATA_T = {DATA_1M,DATA_2M,DATA_3M,DATA_4M,DATA_5M,DATA_6M};
+FORM_T = {FORM_1M,FORM_2M,FORM_3M,FORM_4M,FORM_5M,FORM_6M};
+RMSE_F_Avai = zeros(50,6);
+RMSE_F_Miss = zeros(50,6);
+RMSE_I_Avai = zeros(50,6);
+RMSE_I_Miss = zeros(50,6);
+for i = 1:6
+    Data = DATA_T{i};
+    Form = FORM_T{i};
+    for j = 1:50
+        data = Data(:,j);
+        form = Form(:,j);
+        index_miss = find(isnan(data)==1);
+        index_avai = find(isnan(data)==0);
+        data = data(index_avai);
+        form = form(index_avai);
+        signal_f = ESSA_F(form,data,index_miss,L,k );
+        signal_i = ESSA_I(data,index_miss,L,k );
+        RMSE_F_Avai(j,i) = norm(signal_f(index_avai) - signal_true(index_avai))/sqrt(length(index_avai));
+        RMSE_I_Avai(j,i) = norm(signal_i(index_avai) - signal_true(index_avai))/sqrt(length(index_avai));
+        RMSE_F_Miss(j,i) = norm(signal_f(index_miss) - signal_true(index_miss))/sqrt(length(index_miss));
+        RMSE_I_Miss(j,i) = norm(signal_i(index_miss) - signal_true(index_miss))/sqrt(length(index_miss));
+    end
+end
+
+
+
+
+
+
+
+fit_err1 = zeros(50,1);
+fit_err2 = zeros(50,1);
+cz_err1 = zeros(50,1);
+cz_err2 = zeros(50,1);
+N = 7022;
+parfor i = 1:50
+    i
+    data = DATA_1M(:,i);
+    fser = FORM_1M(:,i);
+    item_miss1 = find(isnan(data)==1);
+    item_exist1 = setdiff(1:N,item_miss1);
+    form = fser(item_exist1);
+    y1 = data(item_exist1);
+    [signal_avail,signal_miss] = ESSA_F(form,y1,item_miss1,365,5 );
+    fit_err1(i) = norm(signal_avail-signal_true(item_exist1))/sqrt(length(item_exist1));
+    %fit_err2(i) = norm(signal_2(item_exist1)-signal_true(item_exist1))/sqrt(length(item_exist1));
+    cz_err1(i) = norm(signal_miss-signal_true(item_miss1))/sqrt(length(item_miss1));
+    %cz_err2(i) = norm(signal_2(item_miss1)-signal_true(item_miss1))/sqrt(length(item_miss1));
+end
+
+
+
+

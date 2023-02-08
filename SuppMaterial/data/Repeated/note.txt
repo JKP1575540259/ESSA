@@ -1,0 +1,2 @@
+DATA_1M - DATA_6M: the 50 sets of incomplete time series with missing percentage of 10% - 60%. The missing values are marked as NaN.
+FORM_1M - FORM_6M: the associated formal errors.
